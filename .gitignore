@@ -1,162 +1,127 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+import tkinter as tk
+from tkinter import messagebox
 
-# C extensions
-*.so
+# Function to solve the matrix using Gaussian elimination
+def solve_matrix():
+    try:
+        # Get the matrix size (number of equations)
+        size = int(size_entry.get())
+        if size <= 0:
+            raise ValueError("Matrix size must be a positive number.")
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+        # Read the coefficient matrix
+        matrix = []
+        for i in range(size):
+            row = [float(matrix_entries[i][j].get()) for j in range(size)]
+            matrix.append(row)
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
+        # Read the constant terms
+        constants = [float(constants_entries[i].get()) for i in range(size)]
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+        # Solve the system
+        solution = gaussian_elimination(matrix, constants)
+        display_solution(solution)
+    except Exception as e:
+        messagebox.showerror("Error", str(e))
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-cover/
+# Gaussian elimination method
+def gaussian_elimination(matrix, constants):
+    n = len(matrix)
 
-# Translations
-*.mo
-*.pot
+    # Forward elimination
+    for i in range(n):
+        # Ensure the pivot is not zero
+        pivot = matrix[i][i]
+        if pivot == 0:
+            raise ValueError("Matrix cannot be solved (singular or invalid).")
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
+        # Normalize the current row
+        for j in range(i, n):
+            matrix[i][j] /= pivot
+        constants[i] /= pivot
 
-# Flask stuff:
-instance/
-.webassets-cache
+        # Eliminate rows below the current row
+        for k in range(i + 1, n):
+            factor = matrix[k][i]
+            for j in range(i, n):
+                matrix[k][j] -= factor * matrix[i][j]
+            constants[k] -= factor * constants[i]
 
-# Scrapy stuff:
-.scrapy
+    # Back substitution to find the solution
+    solution = [0] * n
+    for i in range(n - 1, -1, -1):
+        solution[i] = constants[i] - sum(matrix[i][j] * solution[j] for j in range(i + 1, n))
+    return solution
 
-# Sphinx documentation
-docs/_build/
+# Display the solution in a message box
+def display_solution(solution):
+    result = "\n".join(f"x{i + 1} = {value:.2f}" for i, value in enumerate(solution))
+    messagebox.showinfo("Solution", result)
 
-# PyBuilder
-.pybuilder/
-target/
+# Create the input fields for the matrix and constants
+def create_input_fields():
+    try:
+        # Clear existing input fields
+        for widget in matrix_frame.winfo_children():
+            widget.destroy()
+        for widget in constants_frame.winfo_children():
+            widget.destroy()
+        matrix_entries.clear()
+        constants_entries.clear()
 
-# Jupyter Notebook
-.ipynb_checkpoints
+        # Get the size of the matrix
+        size = int(size_entry.get())
+        if size <= 0:
+            raise ValueError("Matrix size must be a positive number.")
 
-# IPython
-profile_default/
-ipython_config.py
+        # Create fields for the coefficient matrix
+        for i in range(size):
+            row_entries = []
+            for j in range(size):
+                entry = tk.Entry(matrix_frame, width=5)
+                entry.grid(row=i, column=j, padx=5, pady=5)
+                row_entries.append(entry)
+            matrix_entries.append(row_entries)
 
-# pyenv
-#   For a library or package, you might want to ignore these files since the code is
-#   intended to run in multiple environments; otherwise, check them in:
-# .python-version
+        # Create fields for the constants
+        for i in range(size):
+            entry = tk.Entry(constants_frame, width=5)
+            entry.grid(row=i, column=0, padx=5, pady=5)
+            constants_entries.append(entry)
+    except ValueError as e:
+        messagebox.showerror("Error", str(e))
 
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
+# GUI Setup
+root = tk.Tk()
+root.title("Matrix Solver")
 
-# poetry
-#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
-#poetry.lock
+# Input for matrix size
+size_frame = tk.Frame(root)
+size_frame.pack(pady=10)
+tk.Label(size_frame, text="Matrix Size (e.g., 3 for 3x3):").pack(side=tk.LEFT)
+size_entry = tk.Entry(size_frame, width=5)
+size_entry.pack(side=tk.LEFT)
 
-# pdm
-#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
-#pdm.lock
-#   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
-#   in version control.
-#   https://pdm.fming.dev/latest/usage/project/#working-with-version-control
-.pdm.toml
-.pdm-python
-.pdm-build/
+# Button to generate input fields
+generate_button = tk.Button(root, text="Generate Fields", command=create_input_fields)
+generate_button.pack(pady=10)
 
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
-__pypackages__/
+# Frames for matrix and constants input
+matrix_frame = tk.Frame(root)
+matrix_frame.pack(pady=10)
+tk.Label(matrix_frame, text="Matrix Coefficients:").pack()
 
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
+constants_frame = tk.Frame(root)
+constants_frame.pack(pady=10)
+tk.Label(constants_frame, text="Constants:").pack()
 
-# SageMath parsed files
-*.sage.py
+# Button to solve the equations
+solve_button = tk.Button(root, text="Solve", command=solve_matrix)
+solve_button.pack(pady=10)
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+# Storage for dynamically created input fields
+matrix_entries = []
+constants_entries = []
 
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# pytype static type analyzer
-.pytype/
-
-# Cython debug symbols
-cython_debug/
-
-# PyCharm
-#  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
-#  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
-#  and can be added to the global gitignore or merged into this file.  For a more nuclear
-#  option (not recommended) you can uncomment the following to ignore the entire idea folder.
-#.idea/
+# Run the application
+root.mainloop()
